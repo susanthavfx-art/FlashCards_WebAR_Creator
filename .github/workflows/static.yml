@@ -1,4 +1,4 @@
-name: Build and deploy WonderLab
+name: Build and deploy Wonderlab to GitHub Pages
 
 on:
   push:
@@ -11,48 +11,49 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Checkout
+      - name: Check out source
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
+          cache: "npm"
 
-      - name: Configure Pages
+      - name: Configure GitHub Pages
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Install dependencies
+      - name: Install locked dependencies
         run: npm ci
 
-      - name: Build app
+      - name: Build for the Pages subfolder
         run: npm run build
         env:
           VITE_BASE_PATH: "${{ steps.pages.outputs.base_path }}/"
+          # Optional teacher media uploads and short lesson links.
+          # Set these in Settings > Secrets and variables > Actions > Variables.
           VITE_SUPABASE_URL: "${{ vars.SUPABASE_URL }}"
           VITE_SUPABASE_PUBLISHABLE_KEY: "${{ vars.SUPABASE_PUBLISHABLE_KEY }}"
 
-      - name: Disable Jekyll
+      - name: Disable Jekyll processing
         run: touch site/.nojekyll
 
-      - name: Upload built site
+      - name: Upload built website only
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./site
+          path: "./site"
 
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
